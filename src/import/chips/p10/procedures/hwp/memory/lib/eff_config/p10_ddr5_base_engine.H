@@ -5,7 +5,7 @@
 /*                                                                        */
 /* OpenPOWER HostBoot Project                                             */
 /*                                                                        */
-/* Contributors Listed Below - COPYRIGHT 2022                             */
+/* Contributors Listed Below - COPYRIGHT 2022,2023                        */
 /* [+] International Business Machines Corp.                              */
 /*                                                                        */
 /*                                                                        */
@@ -39,6 +39,7 @@
 #include <cstring>
 #include <fapi2.H>
 #include <generic/memory/lib/utils/shared/mss_generic_consts.H>
+#include <lib/shared/ody_consts.H>
 #include <generic/memory/lib/data_engine/data_engine_utils.H>
 #include <generic/memory/lib/spd/spd_fields_ddr5.H>
 #include <generic/memory/lib/spd/spd_utils_ddr5.H>
@@ -444,28 +445,29 @@ class base_0_0 : public mss::spd::base
         /// @param[in] i_spd SPD binary
         /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
         ///
-        virtual fapi2::ReturnCode set_channels_per_dimm(const std::vector<uint8_t>& i_spd) const
+        virtual fapi2::ReturnCode set_phy_per_ocmb(const std::vector<uint8_t>& i_spd) const
         {
+            uint8_t l_phy_en_per_ocmb = 0;
             uint8_t l_field = 0;
-            uint8_t l_channels_per_dimm = 0;
 
             // =========================================================
-            // Item JC-45-2260.01M
-            // Page 75
-            // DDR5 SPD Document Release 1.0
+            // Page 69
+            // DDR5 DDR5 SPD Document Release 1.10
             // Byte 235 (0x0EB): Memory Channel Bus Width
             // =========================================================
-            const std::vector<std::pair<uint8_t, uint8_t> > CHANNELS_PER_DIMM_MAP =
+            static const std::vector<std::pair<uint8_t, uint8_t> > PHY_PER_OCMB_EN_MAP =
             {
                 // {key byte, bus width (in bits)
-                {0b00, fapi2::ENUM_ATTR_MEM_EFF_CHANNELS_PER_DIMM_1_CHANNEL},
-                {0b01, fapi2::ENUM_ATTR_MEM_EFF_CHANNELS_PER_DIMM_2_CHANNELS},
-                // All others reserved
+                {0b00, fapi2::ENUM_ATTR_MEM_EFF_DDR5_MEM_PORT_ENABLE_NOT_EN},
+                {0b01, fapi2::ENUM_ATTR_MEM_EFF_DDR5_MEM_PORT_ENABLE_PORT0_EN},
+                {0b10, fapi2::ENUM_ATTR_MEM_EFF_DDR5_MEM_PORT_ENABLE_PORT1_EN},
+                {0b11, fapi2::ENUM_ATTR_MEM_EFF_DDR5_MEM_PORT_ENABLE_BOTH_EN},
             };
 
-            FAPI_TRY(get_field_spd(iv_ocmb, FIELDS::CHANNELS_PER_DIMM, i_spd, SET_CHANNELS_PER_DIMM, l_field));
-            FAPI_TRY(lookup_table_check(iv_dimm, CHANNELS_PER_DIMM_MAP, SET_CHANNELS_PER_DIMM, l_field, l_channels_per_dimm));
-            FAPI_TRY(mss::attr::set_channels_per_dimm(iv_dimm, l_channels_per_dimm));
+            FAPI_TRY(get_field_spd(iv_ocmb, FIELDS::ENABLED_PHY_CHANNELS, i_spd, SET_CHANNELS_PER_DIMM, l_field));
+            FAPI_TRY(lookup_table_check(iv_dimm, PHY_PER_OCMB_EN_MAP, SET_CHANNELS_PER_DIMM, l_field,
+                                        l_phy_en_per_ocmb));
+            FAPI_TRY(mss::attr::set_ddr5_mem_port_enable(iv_ocmb, l_phy_en_per_ocmb));
 
         fapi_try_exit:
             return fapi2::current_err;
@@ -477,30 +479,45 @@ class base_0_0 : public mss::spd::base
         /// @param[in] i_spd SPD binary
         /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
         ///
-        virtual fapi2::ReturnCode set_bus_width(const std::vector<uint8_t>& i_spd) const
+        virtual fapi2::ReturnCode set_channel_bus_width(const std::vector<uint8_t>& i_spd) const
         {
-            uint8_t l_field = 0;
-            uint8_t l_bus_width = 0;
+            uint8_t l_channel_bus_width[ody::NUM_CHANNELS] = {0};
+            uint8_t l_field_channel_a = 0;
+            uint8_t l_field_channel_b = 0;
+            const uint8_t ch_a_index = 0;
+            const uint8_t ch_b_index = 1;
 
             // =========================================================
-            // Item JC-45-2260.01M
-            // Page 75
-            // DDR5 SPD Document Release 1.0
+            // Page 69
+            // DDR5 DDIMM SPD Document Release 1.10
             // Byte 235 (0x0EB): Memory Channel Bus Width
             // =========================================================
-            const std::vector<std::pair<uint8_t, uint8_t> > BUS_WIDTH_MAP =
+            static const std::vector<std::pair<uint8_t, uint8_t> > CH_BUS_WIDTH_MAP =
             {
                 // {key byte, bus width (in bits)
-                {0, fapi2::ENUM_ATTR_MEM_EFF_PRIM_BUS_WIDTH_8_BITS},
-                {1, fapi2::ENUM_ATTR_MEM_EFF_PRIM_BUS_WIDTH_16_BITS},
-                {2, fapi2::ENUM_ATTR_MEM_EFF_PRIM_BUS_WIDTH_32_BITS},
-                {3, fapi2::ENUM_ATTR_MEM_EFF_PRIM_BUS_WIDTH_64_BITS},
+                {0, fapi2::ENUM_ATTR_MEM_EFF_DDR5_CHANNEL_BUS_WIDTH_NOT_USED},
+                {1, fapi2::ENUM_ATTR_MEM_EFF_DDR5_CHANNEL_BUS_WIDTH_32_BITS},
+                {2, fapi2::ENUM_ATTR_MEM_EFF_DDR5_CHANNEL_BUS_WIDTH_36_BITS},
+                {3, fapi2::ENUM_ATTR_MEM_EFF_DDR5_CHANNEL_BUS_WIDTH_40_BITS},
                 // All others reserved
             };
 
-            FAPI_TRY(get_field_spd(iv_ocmb, FIELDS::BUS_WIDTH, i_spd, SET_PRIM_BUS_WIDTH, l_field));
-            FAPI_TRY(lookup_table_check(iv_dimm, BUS_WIDTH_MAP, SET_PRIM_BUS_WIDTH, l_field, l_bus_width));
-            FAPI_TRY(mss::attr::set_prim_bus_width(iv_dimm, l_bus_width));
+            // Both ports have channel A and B, so we need to look at both fields for each port
+            FAPI_TRY(get_field_spd(iv_ocmb, FIELDS::BUS_WIDTH_CHA, i_spd, SET_PRIM_BUS_WIDTH, l_field_channel_a));
+            FAPI_TRY(get_field_spd(iv_ocmb, FIELDS::BUS_WIDTH_CHB, i_spd, SET_PRIM_BUS_WIDTH, l_field_channel_b));
+
+            // Channel A goes into index 0 of the attr
+            // Channel B goes into index 1 of the attr
+            l_channel_bus_width[ch_a_index] = l_field_channel_a;
+            l_channel_bus_width[ch_b_index] = l_field_channel_b;
+
+            FAPI_TRY(lookup_table_check(iv_dimm, CH_BUS_WIDTH_MAP, SET_PRIM_BUS_WIDTH, l_field_channel_a,
+                                        l_channel_bus_width[ch_a_index]));
+            FAPI_TRY(lookup_table_check(iv_dimm, CH_BUS_WIDTH_MAP, SET_PRIM_BUS_WIDTH, l_field_channel_b,
+                                        l_channel_bus_width[ch_b_index]));
+
+            FAPI_TRY(mss::attr::set_ddr5_channel_bus_width(iv_port, l_channel_bus_width));
+
 
         fapi_try_exit:
             return fapi2::current_err;
@@ -898,6 +915,327 @@ class base_0_0 : public mss::spd::base
             return fapi2::current_err;
         }
 
+        //////////////////////////////////////////////////////////
+        //// SPD timings
+        //////////////////////////////////////////////////////////
+
+        ///
+        /// @brief Processes tRCD
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 32 and 33 in the SPD spec
+        ///
+        fapi2::ReturnCode set_trcd(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_trcd = 0;
+            FAPI_TRY(mss::spd::ddr5::process_two_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRCD_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRCD, l_trcd));
+            FAPI_TRY(mss::attr::set_dram_trcd(iv_port, l_trcd));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRP
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 34 and 35 in the SPD spec
+        ///
+        fapi2::ReturnCode set_trp(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_trp = 0;
+            FAPI_TRY(mss::spd::ddr5::process_two_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRP_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRP, l_trp));
+            FAPI_TRY(mss::attr::set_dram_trp(iv_port, l_trp));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRAS
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 36 and 37 in the SPD spec
+        ///
+        fapi2::ReturnCode set_tras(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_tras = 0;
+            FAPI_TRY(mss::spd::ddr5::process_two_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRAS_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRAS, l_tras));
+            FAPI_TRY(mss::attr::set_dram_tras(iv_port, l_tras));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRC
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 38 and 39 in the SPD spec
+        ///
+        fapi2::ReturnCode set_trc(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_trc = 0;
+            FAPI_TRY(mss::spd::ddr5::process_two_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRC_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRC, l_trc));
+            FAPI_TRY(mss::attr::set_dram_trc(iv_port, l_trc));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tWR
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 40 and 41 in the SPD spec
+        ///
+        fapi2::ReturnCode set_twr(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_twr = 0;
+            FAPI_TRY(mss::spd::ddr5::process_two_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TWR_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TWR, l_twr));
+            FAPI_TRY(mss::attr::set_dram_twr(iv_port, l_twr));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRFC_slr into the tRFC attribute
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 42/43 or 44/45 in the SPD spec depending upon the refresh mode
+        ///
+        fapi2::ReturnCode set_trfc_slr(const std::vector<uint8_t>& i_spd) const
+        {
+            uint16_t l_trfc = 0;
+            uint8_t l_refresh_mode = 0;
+            FAPI_TRY(mss::attr::get_mrw_fine_refresh_mode(l_refresh_mode));
+            FAPI_TRY(mss::spd::ddr5::process_trfc_nck(iv_port, iv_dimm, i_spd, FIELDS::TRFC_SLR_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRFC,
+                     l_refresh_mode, l_trfc));
+            FAPI_TRY(mss::attr::set_dram_trfc(iv_port, l_trfc));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRFC_dlr into the tRFC_dlr attribute
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 46/47 or 48/49 in the SPD spec depending upon the refresh mode
+        ///
+        fapi2::ReturnCode set_trfc_dlr(const std::vector<uint8_t>& i_spd) const
+        {
+            uint16_t l_trfc = 0;
+            uint8_t l_refresh_mode = 0;
+            uint8_t l_stack_type = 0;
+
+            // tRFC_dlr only needs to be read if this is a 3DS DIMM
+            FAPI_TRY(mss::attr::get_prim_stack_type(iv_dimm, l_stack_type));
+
+            if(l_stack_type != fapi2::ENUM_ATTR_MEM_EFF_PRIM_STACK_TYPE_3DS)
+            {
+                return fapi2::FAPI2_RC_SUCCESS;
+            }
+
+            FAPI_TRY(mss::attr::get_mrw_fine_refresh_mode(l_refresh_mode));
+            FAPI_TRY(mss::spd::ddr5::process_trfc_nck(iv_port, iv_dimm, i_spd, FIELDS::TRFC_DLR_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRFC_DLR,
+                     l_refresh_mode, l_trfc));
+            FAPI_TRY(mss::attr::set_dram_trfc_dlr(iv_port, l_trfc));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRRD_l into the tRFC_dlr attribute
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 70->72
+        ///
+        fapi2::ReturnCode set_trrd_l(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_trrd_l = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRRD_L_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRRD_L, l_trrd_l));
+            FAPI_TRY(mss::attr::set_dram_trrd_l(iv_port, l_trrd_l));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tCCD_l
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 73->75
+        ///
+        fapi2::ReturnCode set_tccd_l(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_tccd_l = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TCCD_L_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TCCD_L, l_tccd_l));
+            FAPI_TRY(mss::attr::set_dram_tccd_l(iv_port, l_tccd_l));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tCCD_l_wr
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 76->78
+        ///
+        fapi2::ReturnCode set_tccd_l_wr(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_tccd_l_wr = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd,
+                     FIELDS::TCCD_L_WR_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TCCD_L_WR, l_tccd_l_wr));
+            FAPI_TRY(FAPI_ATTR_SET(fapi2::ATTR_MEM_EFF_DRAM_TCCD_L_WR, iv_port, l_tccd_l_wr));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tFAW
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 82->84
+        ///
+        fapi2::ReturnCode set_tfaw(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_tfaw = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TFAW_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TFAW, l_tfaw));
+            FAPI_TRY(mss::attr::set_dram_tfaw(iv_port, l_tfaw));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRTP
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 91->93
+        ///
+        fapi2::ReturnCode set_trtp(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_trtp = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TRTP_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TRTP, l_trtp));
+            FAPI_TRY(mss::attr::set_dram_trtp(iv_port, l_trtp));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tWTR_S
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 88->90
+        ///
+        fapi2::ReturnCode set_twtr_s(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_twtr_s = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TWTR_S_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TWTR_S, l_twtr_s));
+            FAPI_TRY(mss::attr::set_dram_twtr_s(iv_port, l_twtr_s));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tWTR_L
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note This corresponds to bytes 85->87
+        ///
+        fapi2::ReturnCode set_twtr_l(const std::vector<uint8_t>& i_spd) const
+        {
+            uint8_t l_twtr_l = 0;
+            FAPI_TRY(mss::spd::ddr5::process_three_byte_timing_nck(iv_port, iv_dimm, i_spd, FIELDS::TWTR_L_MIN_LSB.get_byte(i_spd),
+                     generic_ffdc_codes::SET_DRAM_TWTR_L, l_twtr_l));
+            FAPI_TRY(mss::attr::set_dram_twtr_l(iv_port, l_twtr_l));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
+        ///
+        /// @brief Processes tRRD_S
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note Taken from the JEDEC spec's timing tables
+        ///
+        fapi2::ReturnCode set_trrd_s(const std::vector<uint8_t>& i_spd) const
+        {
+            // The value is the same across all DDR5 speed bins for JEDEC spec rev 1.7.1
+            constexpr uint8_t TRRD_S = 8;
+            return mss::attr::set_dram_trrd_s(iv_port, TRRD_S);
+        }
+
+        ///
+        /// @brief Processes tRRD_dlr
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note Taken from the JEDEC spec's timing tables - computations come to 4nck so avoiding computations and using a constant
+        ///
+        fapi2::ReturnCode set_trrd_dlr(const std::vector<uint8_t>& i_spd) const
+        {
+            // The value is the same across all DDR5 speed bins for JEDEC spec rev 1.7.1
+            constexpr uint8_t TRRD_DLR = 4;
+            return mss::attr::set_dram_trrd_dlr(iv_port, TRRD_DLR);
+        }
+
+        ///
+        /// @brief Processes tREFI
+        ///
+        /// @param[in] i_spd SPD binary
+        /// @return fapi2::ReturnCode FAPI2_RC_SUCCESS iff success, else error code
+        /// @note Taken from the JEDEC spec's timing tables
+        ///
+        fapi2::ReturnCode set_trefi(const std::vector<uint8_t>& i_spd) const
+        {
+            uint16_t l_trefi_nck = 0;
+            uint8_t l_refresh_mode = 0;
+
+            FAPI_TRY(mss::attr::get_mrw_fine_refresh_mode(l_refresh_mode));
+            FAPI_TRY(mss::spd::ddr5::process_trefi_nck(iv_port, l_refresh_mode, l_trefi_nck));
+            FAPI_TRY(mss::attr::set_dram_trefi(iv_port, l_trefi_nck));
+
+        fapi_try_exit:
+            return fapi2::current_err;
+        }
+
         ///
         /// @brief Process the data init fields - these fields should be processed first
         ///
@@ -940,14 +1278,30 @@ class base_0_0 : public mss::spd::base
             FAPI_TRY(set_col_addr_bits(i_spd));
             FAPI_TRY(set_row_addr_bits(i_spd));
             FAPI_TRY(set_prim_stack_type(i_spd));
-            FAPI_TRY(set_channels_per_dimm(i_spd));
+            FAPI_TRY(set_phy_per_ocmb(i_spd));
             FAPI_TRY(set_prim_die_count(i_spd));
             FAPI_TRY(set_sdram_width(i_spd));
-            FAPI_TRY(set_bus_width(i_spd));
+            FAPI_TRY(set_channel_bus_width(i_spd));
             FAPI_TRY(set_supported_cas_latencies(i_spd));
 
-            // TODO: Zen:MST-1427 Processing for DDR5 EFD module
             // Timing fields
+            FAPI_TRY(set_trcd(i_spd));
+            FAPI_TRY(set_trp(i_spd));
+            FAPI_TRY(set_tras(i_spd));
+            FAPI_TRY(set_trc(i_spd));
+            FAPI_TRY(set_twr(i_spd));
+            FAPI_TRY(set_trfc_slr(i_spd));
+            FAPI_TRY(set_trrd_l(i_spd));
+            FAPI_TRY(set_tccd_l(i_spd));
+            FAPI_TRY(set_tccd_l_wr(i_spd));
+            FAPI_TRY(set_tfaw(i_spd));
+            FAPI_TRY(set_trtp(i_spd));
+            FAPI_TRY(set_twtr_l(i_spd));
+            FAPI_TRY(set_twtr_s(i_spd));
+            FAPI_TRY(set_trrd_s(i_spd));
+            FAPI_TRY(set_trrd_dlr(i_spd));
+            FAPI_TRY(set_trefi(i_spd));
+
 
             FAPI_TRY(set_module_mfg_id(i_spd));
             FAPI_TRY(set_dram_mfg_id(i_spd));
@@ -971,6 +1325,7 @@ class base_0_0 : public mss::spd::base
             FAPI_TRY(set_logical_ranks(i_spd));
             FAPI_TRY(set_height_3ds(i_spd));
             FAPI_TRY(set_mem_dimm_size(i_spd));
+            FAPI_TRY(set_trfc_dlr(i_spd));
 
         fapi_try_exit:
             return fapi2::current_err;

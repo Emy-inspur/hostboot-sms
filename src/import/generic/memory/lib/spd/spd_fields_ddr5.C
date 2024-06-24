@@ -86,15 +86,52 @@ constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TAA_MIN_LSB
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TAA_MIN_MSB;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRCD_MIN_LSB;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRCD_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRP_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRP_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRAS_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRAS_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRC_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRC_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWR_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWR_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_SLR_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_SLR_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_SLR2_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_SLR2_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_DLR_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_DLR_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_DLR2_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRFC_DLR2_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRRD_L_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRRD_L_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRRD_L_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_WR_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_WR_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TCCD_L_WR_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TFAW_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TFAW_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TFAW_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_L_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_L_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_L_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_S_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_S_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TWTR_S_MIN_CLOCK;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRTP_MIN_LSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRTP_MIN_MSB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::TRTP_MIN_CLOCK;
 
 //////////////////////////////////////
 //// Bytes 230-236: module information
 //////////////////////////////////////
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::RANK_MIX;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::PACKAGE_RANKS_PER_CHANNEL;
-constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::BUS_WIDTH;
-constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::BUS_EXT_WIDTH;
-constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::CHANNELS_PER_DIMM;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::BUS_WIDTH_CHA;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::BUS_WIDTH_CHB;
+constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::ENABLED_PHY_CHANNELS;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::CONTINUATION_CODES;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::LAST_NON_ZERO_BYTE;
 constexpr mss::field_t<mss::endian::LITTLE> fields<DDR5, BASE_CNFG>::DRAM_MFR_ID_CODE_LSB;

@@ -58,7 +58,7 @@
 #include <generic/memory/lib/dimm/ddr5/ddr5_mr11.H>
 #include <generic/memory/lib/dimm/ddr5/ddr5_mr12.H>
 
-#ifndef __PPE__
+#if !defined(__PPE__) && !defined(__HOSTBOOT_MODULE)
     // Included for progress / time left reporting (Cronus only)
     #include <ctime>
 #endif
@@ -6787,8 +6787,7 @@ fapi2::ReturnCode read_mr_from_block(const fapi2::Target<fapi2::TARGET_TYPE_DIMM
             }
         }
     }
-
-    FAPI_TRY(l_mr.set_attribute(i_target));
+    FAPI_TRY(l_mr.attr_setter(i_rank_infos[0]));
 
 fapi_try_exit:
     return fapi2::current_err;

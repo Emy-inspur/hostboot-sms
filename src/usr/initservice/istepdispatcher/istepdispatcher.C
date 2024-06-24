@@ -244,6 +244,7 @@ void IStepDispatcher::parsePLDMBiosAttrs(ISTEP_ERROR::IStepError & io_stepError)
         ISTEP::parse_hb_lateral_cast_out_mode,
         ISTEP::parse_hb_cap_freq_mhz,
         ISTEP::parse_hb_proc_favor_aggressive_prefetch,
+        ISTEP::parse_hb_ps_config,
         ISTEP::parse_hb_secure_ver_lockin_enabled,
     };
 
@@ -3256,6 +3257,11 @@ void IStepDispatcher::doWait(uint16_t i_waitSec)
     // Otherwise sleep for the requested number of seconds
     else
     {
+        CONSOLE::displayf(CONSOLE::VUART1, NULL,
+                          "**Pausing IPL for %d seconds (ATTR_ISTEP_PAUSE_ENABLE)**",
+                          i_waitSec);
+        CONSOLE::flush();
+
 #ifdef CONFIG_PLDM
         // Send heartbeats in intervals of min watchdog timeout / 2 so that
         // there is enough time for processing and propagation of the message
